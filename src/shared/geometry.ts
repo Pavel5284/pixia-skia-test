@@ -7,6 +7,7 @@ const BG_COLOR = 0x1a1a2e;
 
 export const BG_COLOR_PIXI: number = BG_COLOR;
 
+/** Цвет фона в формате Skia [r, g, b, a] (0..1) */
 export function bgColorSkia(): [number, number, number, number] {
     return [
         ((BG_COLOR >> 16) & 0xff) / 255,
@@ -16,22 +17,21 @@ export function bgColorSkia(): [number, number, number, number] {
     ];
 }
 
-export function bgColorJsPdf(): [number, number, number] {
-    return [(BG_COLOR >> 16) & 0xff, (BG_COLOR >> 8) & 0xff, BG_COLOR & 0xff];
-}
-
+/** Один графический примитив PIXI.Graphics с его стилями */
 export interface GraphicsDataItem {
     shape: PIXI.IShape;
     lineStyle: { visible: boolean; width: number; color: number; alpha: number } | null;
     fillStyle: { visible: boolean; color: number; alpha: number } | null;
 }
 
+/** Извлекает массив графических данных из PIXI.Graphics */
 export function getGraphicsData(g: PIXI.Graphics): ReadonlyArray<GraphicsDataItem> {
     const gd = (g.geometry as unknown as { graphicsData?: ReadonlyArray<unknown> }).graphicsData;
     if (!gd) return [];
     return gd as ReadonlyArray<GraphicsDataItem>;
 }
 
+/** Извлекает исходный HTML-элемент (img/canvas) из PIXI.Sprite */
 export function getSpriteSource(
     sprite: PIXI.Sprite,
 ): HTMLImageElement | HTMLCanvasElement | undefined {
@@ -41,10 +41,12 @@ export function getSpriteSource(
     return res?.source;
 }
 
+/** Преобразует PIXI.Matrix в DOMMatrix для hit-test */
 export function pixiMatrixToDOMMatrix(wt: PIXI.Matrix): DOMMatrix {
     return new DOMMatrix([wt.a, wt.b, wt.c, wt.d, wt.tx, wt.ty]);
 }
 
+/** Преобразует PIXI.IShape в унифицированный ShapeInfo для hit-test и рендера */
 export function buildShapeInfo(shape: PIXI.IShape): ShapeInfo | null {
     if (shape instanceof PIXI.Circle) {
         return { type: 'circle', cx: shape.x, cy: shape.y, radius: shape.radius };
@@ -75,6 +77,7 @@ export function buildShapeInfo(shape: PIXI.IShape): ShapeInfo | null {
     }
 }
 
+/** Собирает SubShape из GraphicsDataItem для hit-test */
 export function buildSubShape(data: GraphicsDataItem): SubShape | null {
     const shapeInfo = buildShapeInfo(data.shape);
     if (!shapeInfo) return null;
@@ -90,6 +93,7 @@ export function buildSubShape(data: GraphicsDataItem): SubShape | null {
     };
 }
 
+/** Проверка попадания точки в полигон (ray casting) */
 function pointInPolygon(px: number, py: number, pts: number[]): boolean {
     let inside = false;
     for (let i = 0, j = pts.length - 2; i < pts.length; j = i, i += 2) {
@@ -104,6 +108,7 @@ function pointInPolygon(px: number, py: number, pts: number[]): boolean {
     return inside;
 }
 
+/** Проверка попадания точки в фигуру (заливка) */
 export function pointInShape(px: number, py: number, shape: ShapeInfo): boolean {
     switch (shape.type) {
         case 'circle': {
@@ -132,6 +137,7 @@ export function pointInShape(px: number, py: number, shape: ShapeInfo): boolean 
     }
 }
 
+/** Проверка попадания точки в скруглённый прямоугольник */
 function pointInRoundedRect(
     px: number,
     py: number,
@@ -139,33 +145,29 @@ function pointInRoundedRect(
 ): boolean {
     const { x, y, width: w, height: h, cornerRadius: r } = shape;
 
-    // Точка вне AABB — сразу промах
     if (px < x || px > x + w || py < y || py > y + h) return false;
 
     const cr = Math.min(r, Math.min(w, h) / 2);
 
-    // Описываем четыре угловых зоны: [x1, y1, x2, y2, cx, cy]
-    // cx/cy — центр окружности скругления для данного угла
     const corners: [number, number, number, number, number, number][] = [
-        [x,           y,           x + cr,     y + cr,     x + cr,     y + cr    ], // верхний левый
-        [x + w - cr,  y,           x + w,      y + cr,     x + w - cr, y + cr    ], // верхний правый
-        [x,           y + h - cr,  x + cr,     y + h,      x + cr,     y + h - cr], // нижний левый
-        [x + w - cr,  y + h - cr,  x + w,      y + h,      x + w - cr, y + h - cr], // нижний правый
+        [x,           y,           x + cr,     y + cr,     x + cr,     y + cr    ],
+        [x + w - cr,  y,           x + w,      y + cr,     x + w - cr, y + cr    ],
+        [x,           y + h - cr,  x + cr,     y + h,      x + cr,     y + h - cr],
+        [x + w - cr,  y + h - cr,  x + w,      y + h,      x + w - cr, y + h - cr],
     ];
 
     for (const [x1, y1, x2, y2, cx, cy] of corners) {
         if (px >= x1 && px <= x2 && py >= y1 && py <= y2) {
-            // Точка в угловой зоне — проверяем попадание в круг скругления
             const dx = px - cx,
                 dy = py - cy;
             return dx * dx + dy * dy <= cr * cr;
         }
     }
 
-    // Точка вне угловых зон, но внутри AABB — попадание
     return true;
 }
 
+/** Расстояние от точки до отрезка */
 function distToSegment(px: number, py: number, x1: number, y1: number, x2: number, y2: number): number {
     const dx = x2 - x1, dy = y2 - y1;
     const len2 = dx * dx + dy * dy;
@@ -175,6 +177,7 @@ function distToSegment(px: number, py: number, x1: number, y1: number, x2: numbe
     return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
 }
 
+/** Проверка попадания точки в фигуру с учётом отступа (для stroke) */
 function pointInShapeExpanded(px: number, py: number, shape: ShapeInfo, margin: number): boolean {
     switch (shape.type) {
         case 'circle': {
@@ -211,6 +214,7 @@ function pointInShapeExpanded(px: number, py: number, shape: ShapeInfo, margin: 
     }
 }
 
+/** Проверяет hit-test для SubShape: заливка или обводка с учётом толщины */
 export function hitTestSubShape(px: number, py: number, sub: SubShape): boolean {
     return (sub.hasFill && pointInShape(px, py, sub.shape)) ||
         (sub.hasStroke && pointInShapeExpanded(px, py, sub.shape, sub.lineWidth / 2));

@@ -129,4 +129,4 @@ chmod +x build_skia_pdf.sh
 - [TypeScript](https://www.typescriptlang.org/) 5.4+
 - [Pixi.js legacy](https://pixijs.com/) 7.2.4 (`forceCanvas: true`)
 - [Skia / CanvasKit](https://skia.org/docs/user/modules/canvaskit/) — кастомная WASM-сборка
-- [Vite](https://vitejs.dev/) 5.x
+- [Vite](https://vitejs.dev/) 8.x

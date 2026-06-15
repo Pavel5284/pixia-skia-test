@@ -1,6 +1,7 @@
 import * as PIXI from 'pixi.js-legacy';
 import type { CanvasKit, Paint, Path } from 'skia';
 
+/** Конвертирует PIXI-цвет (0xRRGGBB) и alpha в массив Skia [r, g, b, a] (0..1) */
 export function pixiColorToSkia(color: number, alpha: number): number[] {
     const r = ((color >> 16) & 0xff) / 255;
     const g = ((color >> 8) & 0xff) / 255;
@@ -8,6 +9,7 @@ export function pixiColorToSkia(color: number, alpha: number): number[] {
     return [r, g, b, alpha];
 }
 
+/** Строит Skia Path из PIXI.IShape (rect, ellipse, circle, polygon, rounded-rect) */
 export function buildSkiaPath(ck: CanvasKit, shape: PIXI.IShape): Path | null {
     const pb = new ck.PathBuilder();
 
@@ -54,6 +56,7 @@ export function buildSkiaPath(ck: CanvasKit, shape: PIXI.IShape): Path | null {
     }
 }
 
+/** Утилита: создаёт Paint, применяет setup, вызывает fn, удаляет Paint */
 export function usePaint(
     ck: CanvasKit,
     setup: (paint: Paint) => void,

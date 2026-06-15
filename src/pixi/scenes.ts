@@ -1,16 +1,12 @@
 import * as PIXI from 'pixi.js-legacy';
 
-// Расширяем Window, чтобы TypeScript не ругался на window.logEvent
 declare global {
     interface Window {
         logEvent?: (msg: string) => void;
     }
 }
 
-/**
- * Показывает тост-уведомление и пишет в лог событий на странице.
- * Дублирует console.log для наглядной демонстрации работы событий.
- */
+/** Показывает тост-уведомление и пишет в лог событий на странице */
 export function notifyEvent(label: string, eventType: 'pointerdown' | 'pointerup'): void {
     const icon = eventType === 'pointerdown' ? '▼' : '▲';
     const msg = `${icon} <strong>${label}</strong>: ${eventType}`;
@@ -21,6 +17,7 @@ export function notifyEvent(label: string, eventType: 'pointerdown' | 'pointerup
 
 let _toastTimer: ReturnType<typeof setTimeout> | null = null;
 
+/** Показывает временное toast-уведомление внизу экрана */
 function showToast(message: string): void {
     document.getElementById('__event-toast')?.remove();
     if (_toastTimer !== null) clearTimeout(_toastTimer);
@@ -53,8 +50,7 @@ function showToast(message: string): void {
     }, 1400);
 }
 
-// ─── Сцена 1 ────────────────────────────────────────────────────────────────
-
+/** Сцена 1: эллипс, прямоугольник (с масштабом), две линии во вложенном контейнере */
 export function createScene1(): PIXI.Container {
     const mainContainer = new PIXI.Container();
     const subContainer = new PIXI.Container();
@@ -79,11 +75,9 @@ export function createScene1(): PIXI.Container {
     g2.on('pointerdown', () => notifyEvent('#0000ff прямоугольник', 'pointerdown'));
     g2.on('pointerup', () => notifyEvent('#0000ff прямоугольник', 'pointerup'));
 
-    // Белая линия (без событий, только визуал)
     g3.lineStyle(10, 0xffffff, 1).moveTo(0, 0).lineTo(150, 100);
     g3.angle = -20;
 
-    // Жёлтая линия (без событий, только визуал)
     g4.lineStyle(10, 0xffff00, 1).moveTo(0, 70).lineTo(150, -30);
     g4.angle = 20;
 
@@ -94,8 +88,7 @@ export function createScene1(): PIXI.Container {
     return mainContainer;
 }
 
-// ─── Сцена 2 ────────────────────────────────────────────────────────────────
-
+/** Сцена 2: треугольник, круг (stroke-only), прямоугольник, спрайт */
 export function createScene2(): PIXI.Container {
     const container = new PIXI.Container();
 
@@ -122,6 +115,27 @@ export function createScene2(): PIXI.Container {
     g3.on('pointerdown', () => notifyEvent('#ffaa00 прямоугольник', 'pointerdown'));
     g3.on('pointerup', () => notifyEvent('#ffaa00 прямоугольник', 'pointerup'));
 
-    container.addChild(g1, g2, g3);
+    // Генерируем спрайт из canvas (программно, без внешнего файла)
+    const spriteCanvas = document.createElement('canvas');
+    spriteCanvas.width = 80;
+    spriteCanvas.height = 80;
+    {
+        const ctx = spriteCanvas.getContext('2d')!;
+        ctx.fillStyle = '#ff8800';
+        ctx.fillRect(0, 0, 80, 80);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 38px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('S', 40, 42);
+    }
+    const sprite = PIXI.Sprite.from(spriteCanvas);
+    sprite.position.set(600, 380);
+    sprite.angle = 15;
+    sprite.eventMode = 'static';
+    sprite.on('pointerdown', () => notifyEvent('#ff8800 спрайт', 'pointerdown'));
+    sprite.on('pointerup', () => notifyEvent('#ff8800 спрайт', 'pointerup'));
+
+    container.addChild(g1, g2, g3, sprite);
     return container;
 }

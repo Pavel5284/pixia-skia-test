@@ -1,6 +1,7 @@
 import type { HitTarget } from '../types';
 import { hitTestSubShape } from '../shared/geometry';
 
+/** Преобразует координаты указателя в локальные и проверяет попадание в hitTargets */
 export function dispatchHitTest(
     event: PointerEvent,
     targets: HitTarget[],

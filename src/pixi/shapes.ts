@@ -3,10 +3,12 @@ import { notifyEvent } from './scenes';
 
 const TYPE_NAMES = ['прямоугольник', 'эллипс', 'линия', 'круг'];
 
+/** HEX-строка из числа */
 function hexColor(hex: number): string {
     return '#' + hex.toString(16).padStart(6, '0');
 }
 
+/** Добавляет случайную фигуру (4 типа: rect, ellipse, line, circle) в контейнер */
 export function addRandomShape(container: PIXI.Container): PIXI.Graphics {
     const g = new PIXI.Graphics();
     const x = Math.random() * 700 + 50;

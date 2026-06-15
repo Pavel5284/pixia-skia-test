@@ -8,6 +8,7 @@ import { convertPixiContainerToSkia } from './skia/renderer';
 import { initControls } from './ui/controls';
 import { SCENE_WIDTH, SCENE_HEIGHT } from './shared/geometry';
 
+/** Точка входа: загружает CanvasKit, создаёт Pixi/Skia канвасы и инициализирует UI */
 async function main() {
     const ck = await loadCanvasKit();
 

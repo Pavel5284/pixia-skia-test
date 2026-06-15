@@ -6,11 +6,11 @@ import { exportSceneToPDF } from '../skia/pdfExporter';
 import { dispatchHitTest } from '../events/hitTest';
 import type { HitTarget } from '../types';
 
+/** Внутреннее состояние приложения для контролов */
 interface AppState {
     ck: CanvasKit;
     pixiApp: PIXI.Application;
     skSurface: SkSurface;
-    /** Все сцены создаются один раз в main.ts и передаются сюда */
     scenes: PIXI.Container[];
     currentSceneIndex: number;
     hitTargets: HitTarget[];
@@ -19,6 +19,7 @@ interface AppState {
     height: number;
 }
 
+/** Перерисовывает Skia-канвас и обновляет hitTargets */
 function syncSkiaCanvas(state: AppState): void {
     const skCanvas = state.skSurface.getCanvas();
     state.hitTargets = convertPixiContainerToSkia(
@@ -31,6 +32,7 @@ function syncSkiaCanvas(state: AppState): void {
     state.skSurface.flush();
 }
 
+/** Навешивает обработчики на кнопки управления и канвас */
 export function initControls(state: AppState): () => void {
     let cachedRect: DOMRect | null = null;
 
@@ -43,7 +45,6 @@ export function initControls(state: AppState): () => void {
         cachedRect = null;
     };
 
-    // Инвалидируем кэш при изменении размеров окна и при скролле
     window.addEventListener('resize', invalidateRect);
     window.addEventListener('scroll', invalidateRect, true);
 
@@ -84,11 +85,6 @@ export function initControls(state: AppState): () => void {
     const btnExportPdf = document.getElementById('btn-export-pdf');
     const btnPrevScene = document.getElementById('btn-prev-scene');
     const btnNextScene = document.getElementById('btn-next-scene');
-
-    if (!btnAddShape) console.warn('Кнопка #btn-add-shape не найдена в DOM');
-    if (!btnExportPdf) console.warn('Кнопка #btn-export-pdf не найдена в DOM');
-    if (!btnPrevScene) console.warn('Кнопка #btn-prev-scene не найдена в DOM');
-    if (!btnNextScene) console.warn('Кнопка #btn-next-scene не найдена в DOM');
 
     btnAddShape?.addEventListener('click', onAddShape);
     btnExportPdf?.addEventListener('click', onExportPdf);

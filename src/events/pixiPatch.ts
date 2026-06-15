@@ -1,5 +1,6 @@
 import * as PIXI from 'pixi.js-legacy';
 
+/** Расстояние от точки до отрезка */
 function distToSegment(
     px: number, py: number,
     x1: number, y1: number,
@@ -13,6 +14,7 @@ function distToSegment(
     return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
 }
 
+/** Проверяет попадание точки на обводку фигуры (для stroke-only hit-test) */
 function pointOnStroke(
     px: number, py: number,
     shape: PIXI.IShape,
@@ -52,6 +54,10 @@ function pointOnStroke(
     }
 }
 
+/**
+ * Патчит PIXI.Graphics.prototype.containsPoint для поддержки stroke-only фигур.
+ * В PIXI v7 containsPoint проверяет только fill, линии без заливки не кликабельны.
+ */
 export function applyPixiPatch(): void {
     const origContainsPoint = PIXI.Graphics.prototype.containsPoint;
 
@@ -60,10 +66,9 @@ export function applyPixiPatch(): void {
         try {
             if (origContainsPoint.call(this, point)) return true;
         } catch {
-            // Ignore — вероятно нет fillStyle
+            // Нет fillStyle — containsPoint выбрасывает исключение
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const self = this as any;
         let gd: ReadonlyArray<any> | undefined;
 

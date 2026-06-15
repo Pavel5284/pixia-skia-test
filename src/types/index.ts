@@ -1,5 +1,6 @@
 import type { CanvasKit, Canvas, Paint, Path } from 'skia';
 
+/** Цель для hit-test: описывает позицию, трансформацию, subShapes и колбэки событий */
 export interface HitTarget {
     localBounds: DOMRect;
     worldMatrix: DOMMatrix;
@@ -9,6 +10,7 @@ export interface HitTarget {
     onPointerUp?: () => void;
 }
 
+/** Одна подобласть фигуры с информацией о fill/stroke */
 export interface SubShape {
     shape: ShapeInfo;
     lineWidth: number;
@@ -16,7 +18,7 @@ export interface SubShape {
     hasFill: boolean;
 }
 
-
+/** Унифицированное описание геометрической фигуры для hit-test и рендера */
 export type ShapeInfo =
     | { type: 'circle'; cx: number; cy: number; radius: number }
     | { type: 'ellipse'; cx: number; cy: number; rx: number; ry: number }
