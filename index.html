@@ -24,7 +24,6 @@
             opacity: 0.9;
         }
 
-        /* Подсказка об событиях */
         .event-hint {
             font-size: 0.8rem;
             opacity: 0.45;
@@ -44,6 +43,7 @@
             flex-direction: column;
             align-items: center;
             gap: 8px;
+            width: 100%;
         }
 
         .canvas-wrap label {
@@ -53,7 +53,6 @@
             letter-spacing: 0.1em;
         }
 
-        /* Подпись с кликабельными объектами */
         .canvas-wrap .hint {
             font-size: 0.75rem;
             opacity: 0.35;
@@ -63,6 +62,8 @@
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 4px;
             cursor: crosshair;
+            max-width: 100%;
+            height: auto;
         }
 
         .controls {
@@ -85,7 +86,6 @@
         button:hover { background: rgba(255,255,255,0.15); }
         button:active { background: rgba(255,255,255,0.05); }
 
-        /* Лог событий */
         .event-log-wrap {
             width: 100%;
             max-width: 500px;
@@ -118,8 +118,21 @@
         }
 
         #event-log em { color: #a0f0c0; font-style: normal; }
+
+        @media (max-width: 600px) {
+            body { padding: 12px; gap: 12px; }
+            h1 { font-size: 1.1rem; }
+            .canvases { gap: 12px; }
+            .controls { gap: 8px; }
+            .controls button { flex: 1 1 calc(50% - 8px); font-size: 0.8rem; padding: 12px 8px; text-align: center; }
+            .event-hint br { display: none; }
+        }
+
+        @media (max-width: 400px) {
+            .controls button { flex: 1 1 100%; }
+        }
     </style>
-  <script type="module" crossorigin src="/pixia-skia-test/assets/index-CcvSE2Cb.js"></script>
+  <script type="module" crossorigin src="/pixia-skia-test/assets/index-BYUbWviL.js"></script>
 </head>
 <body>
 <h1>Pixi.js + Skia Renderer</h1>
