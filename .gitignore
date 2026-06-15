@@ -6,4 +6,3 @@ vite-err.txt
 .idea/
 .eslintrc.json
 build_skia_windows.ps1
-skia/

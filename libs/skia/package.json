@@ -1,0 +1,14 @@
+{
+  "name": "skia",
+  "version": "0.0.1",
+  "description": "Custom Skia WASM build with PDF backend",
+  "main": "./canvaskit.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./canvaskit.js",
+      "import": "./canvaskit.js",
+      "types": "./index.d.ts"
+    }
+  }
+}
