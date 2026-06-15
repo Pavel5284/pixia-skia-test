@@ -1,0 +1,105 @@
+--- Patch: добавить PDF биндинги в modules/canvaskit/canvaskit_bindings.cpp
+---
+--- Инструкция по применению:
+---   cd /path/to/skia
+---   patch -p1 < canvaskit_pdf_bindings.patch
+---
+--- Или вручную: вставить блоки ниже в canvaskit_bindings.cpp
+
+=== 1. ДОБАВИТЬ В НАЧАЛО ФАЙЛА (после строки с #include "include/core/SkStream.h") ===
+
+#ifdef CK_ENABLE_PDF
+#include "include/docs/SkPDFDocument.h"
+#include "include/encode/SkJpegEncoder.h"
+#endif
+
+=== 2. ДОБАВИТЬ В КОНЕЦ ФАЙЛА — перед закрывающей скобкой EMSCRIPTEN_BINDINGS ===
+
+#ifdef CK_ENABLE_PDF
+    // ── PDF Document ──────────────────────────────────────────────────────────
+    //
+    // MakePDFDocument(width, height) → { canvas, close, getData }
+    //
+    // Пример использования из TypeScript:
+    //
+    //   const doc = CanvasKit.MakePDFDocument(800, 600);
+    //   const canvas = doc.beginPage();
+    //   canvas.drawRect(...);
+    //   doc.endPage();
+    //   doc.close();
+    //   const bytes: Uint8Array = doc.getData();
+    //   // сохранить bytes как .pdf
+    //
+    function_("MakePDFDocument", optional_override([](float width, float height) -> JSObject {
+        // Внутренний буфер для записи PDF байтов
+        auto stream = std::make_shared<SkDynamicMemoryWStream>();
+
+        SkPDF::Metadata meta;
+        // Используем встроенные JPEG кодеки Skia
+        meta.fRasterDPI = 72;
+
+        auto doc = SkPDF::MakeDocument(stream.get(), meta);
+        if (!doc) {
+            return emscripten::val::null();
+        }
+
+        JSObject result = emscripten::val::object();
+
+        // beginPage() → SkCanvas*  (не владеющий указатель, действителен до endPage)
+        result.set("beginPage", emscripten::val::module_property("_pdf_beginPage"));
+        result.set("endPage",   emscripten::val::module_property("_pdf_endPage"));
+        result.set("close",     emscripten::val::module_property("_pdf_close"));
+        result.set("getData",   emscripten::val::module_property("_pdf_getData"));
+
+        // Храним состояние в JS-объекте через внешние указатели.
+        // Используем uintptr_t, чтобы безопасно передавать через границу JS/WASM.
+        result.set("_docPtr",    reinterpret_cast<uintptr_t>(doc.release()));
+        result.set("_streamPtr", reinterpret_cast<uintptr_t>(
+            new std::shared_ptr<SkDynamicMemoryWStream>(stream)));
+        result.set("_width",  width);
+        result.set("_height", height);
+
+        return result;
+    }));
+#endif // CK_ENABLE_PDF
+
+=== 3. ДОБАВИТЬ отдельные helper-функции (перед EMSCRIPTEN_BINDINGS) ===
+
+#ifdef CK_ENABLE_PDF
+// Начать новую страницу PDF и вернуть canvas для рисования.
+// Вызывается из JS как: const skCanvas = CanvasKit._pdf_beginPage(docObj)
+static SkCanvas* PDF_BeginPage(uintptr_t docPtr, float width, float height) {
+    SkDocument* doc = reinterpret_cast<SkDocument*>(docPtr);
+    return doc->beginPage(width, height);
+}
+
+// Завершить текущую страницу.
+static void PDF_EndPage(uintptr_t docPtr) {
+    SkDocument* doc = reinterpret_cast<SkDocument*>(docPtr);
+    doc->endPage();
+}
+
+// Закрыть документ (финализировать PDF).
+static void PDF_Close(uintptr_t docPtr) {
+    SkDocument* doc = reinterpret_cast<SkDocument*>(docPtr);
+    doc->close();
+    delete doc;   // освобождаем: был отдан release() при создании
+}
+
+// Получить байты PDF после close().
+static Uint8Array PDF_GetData(uintptr_t streamPtr) {
+    auto* sharedStream = reinterpret_cast<std::shared_ptr<SkDynamicMemoryWStream>*>(streamPtr);
+    sk_sp<SkData> data = (*sharedStream)->detachAsData();
+    delete sharedStream;   // освобождаем shared_ptr
+    return toBytes(data);
+}
+#endif // CK_ENABLE_PDF
+
+=== 4. ДОБАВИТЬ биндинги helper-функций ВНУТРИ EMSCRIPTEN_BINDINGS(Skia) { ... } ===
+
+#ifdef CK_ENABLE_PDF
+    function_("_pdf_beginPage", &PDF_BeginPage, allow_raw_pointers());
+    function_("_pdf_endPage",   &PDF_EndPage);
+    function_("_pdf_close",     &PDF_Close);
+    function_("_pdf_getData",   &PDF_GetData);
+#endif
