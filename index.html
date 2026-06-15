@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pixi + Skia</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: #0f0f1a;
+            color: #e0e0ff;
+            font-family: system-ui, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px;
+            gap: 20px;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            letter-spacing: 0.05em;
+            opacity: 0.9;
+        }
+
+        /* Подсказка об событиях */
+        .event-hint {
+            font-size: 0.8rem;
+            opacity: 0.45;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .canvases {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .canvas-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .canvas-wrap label {
+            font-size: 0.85rem;
+            opacity: 0.6;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        /* Подпись с кликабельными объектами */
+        .canvas-wrap .hint {
+            font-size: 0.75rem;
+            opacity: 0.35;
+        }
+
+        canvas {
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 4px;
+            cursor: crosshair;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.07);
+            color: #e0e0ff;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.15s;
+        }
+        button:hover { background: rgba(255,255,255,0.15); }
+        button:active { background: rgba(255,255,255,0.05); }
+
+        /* Лог событий */
+        .event-log-wrap {
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .event-log-wrap h2 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            opacity: 0.4;
+        }
+
+        #event-log {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 6px;
+            padding: 10px 14px;
+            font-size: 0.8rem;
+            font-family: monospace;
+            min-height: 72px;
+            max-height: 120px;
+            overflow-y: auto;
+            color: rgba(224,224,255,0.7);
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        #event-log em { color: #a0f0c0; font-style: normal; }
+    </style>
+  <script type="module" crossorigin src="/pixia-skia-test/assets/index-DDFn6fmA.js"></script>
+</head>
+<body>
+<h1>Pixi.js + Skia Renderer</h1>
+
+<p class="event-hint">
+    Кликайте по фигурам на <strong>обоих</strong> канвасах — события pointerdown/pointerup<br>
+    отображаются в логе ниже и в консоли браузера.
+</p>
+
+<div class="canvases">
+    <div class="canvas-wrap">
+        <label>Pixi.js (forceCanvas)</label>
+        <canvas id="pixi-canvas" width="800" height="600"></canvas>
+        <span class="hint">Нативные события Pixi</span>
+    </div>
+    <div class="canvas-wrap">
+        <label>Skia (CanvasKit)</label>
+        <canvas id="skia-canvas" width="800" height="600"></canvas>
+        <span class="hint">Hit-test через обратную матрицу трансформации</span>
+    </div>
+</div>
+
+<div class="controls">
+    <button id="btn-prev-scene">◀ Предыдущая сцена</button>
+    <button id="btn-next-scene">Следующая сцена ▶</button>
+    <button id="btn-add-shape">+ Случайная фигура</button>
+    <button id="btn-export-pdf">⬇ Экспорт в PDF</button>
+</div>
+
+<!-- Лог событий — дублирует console.log для наглядности -->
+<div class="event-log-wrap">
+    <h2>Лог событий</h2>
+    <div id="event-log"><span style="opacity:0.3">— ожидание событий —</span></div>
+</div>
+
+
+<!-- Глобальный хелпер для лога; вызывается из scenes.ts через window.logEvent -->
+<script>
+    const log = document.getElementById('event-log');
+    let placeholder = log.querySelector('span');
+
+    window.logEvent = function(msg) {
+        if (placeholder) { placeholder.remove(); placeholder = null; }
+        const entry = document.createElement('div');
+        entry.style.opacity = '0.9';
+        entry.innerHTML = `<em>${new Date().toLocaleTimeString()}</em>  ${msg}`;
+        log.appendChild(entry);
+        log.scrollTop = log.scrollHeight;
+        const entries = log.children;
+        for (let i = 0; i < entries.length - 1; i++) {
+            entries[i].setAttribute('style', 'opacity: 0.4');
+        }
+    };
+</script>
+</body>
+</html>
